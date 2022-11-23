@@ -1,0 +1,3 @@
+/home/s2/Documents/HW4/cmake-build-debug_with_flags/CMakeFiles/HW4.dir
+/home/s2/Documents/HW4/cmake-build-debug_with_flags/CMakeFiles/edit_cache.dir
+/home/s2/Documents/HW4/cmake-build-debug_with_flags/CMakeFiles/rebuild_cache.dir

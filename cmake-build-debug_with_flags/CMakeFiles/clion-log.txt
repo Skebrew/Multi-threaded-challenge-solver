@@ -1,0 +1,4 @@
+/home/s2/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=/home/s2/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/ninja/linux/ninja -DCMAKE_C_COMPILER=/usr/bin/gcc -G Ninja -S /home/s2/Documents/HW4 -B /home/s2/Documents/HW4/cmake-build-debug_with_flags
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/s2/Documents/HW4/cmake-build-debug_with_flags

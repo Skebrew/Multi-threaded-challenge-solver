@@ -1,0 +1,16 @@
+/home/s2/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/s2/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/ninja/linux/ninja -DCMAKE_C_COMPILER=/usr/bin/gcc set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb)" -G Ninja -S /home/s2/Documents/HW4 -B /home/s2/Documents/HW4/cmake-build-debug
+CMake Warning:
+  Ignoring extra path from command line:
+
+   "/home/s2/Documents/HW4/cmake-build-debug/set(CMAKE_C_FLAGS_DEBUG"
+
+
+CMake Warning:
+  Ignoring extra path from command line:
+
+   "${CMAKE_C_FLAGS_DEBUG} -ggdb)"
+
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/s2/Documents/HW4/cmake-build-debug
