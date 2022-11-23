@@ -18,7 +18,6 @@ unsigned int NSOLUTIONS = 8;    // max number of solutions, accessed by multiple
 //the following two global variables are used by worker threads to communicate back the found results to the main thread
 unsigned short found_solutions = 0;
 unsigned long* solutions;
-//[IMPLEMENT][TEST] create a variable that will keep track of the  highest initial value used by a past thread
 
 unsigned short divisibility_check(unsigned long n){
     //very not efficient algorithm
@@ -52,7 +51,7 @@ short try_solution(unsigned short challenge, unsigned long attempted_solution){
 void* worker_thread_function(void *tinput_void){
     tinput_t* tinput = (tinput_t*) tinput_void; // gets the tinput
 
-    unsigned long first_tried_solution = 0; //[IMPLEMENT][TEST] first_tried_solution needs to be set to 10,000(or whatever interval) more than the last solution
+    unsigned long first_tried_solution = 0; // starting solution trying from zero
     //1000*1000000000L*1000 is just very big number, which we will never reach
     for(unsigned long attempted_solution=first_tried_solution; attempted_solution<1000*1000000000L*1000; attempted_solution++){ // incrementally tries to find a solution
         
@@ -84,22 +83,21 @@ void* worker_thread_function(void *tinput_void){
     }
 }
 
-// Create multiple threads to find the eight difefernet solution
+
 void solve_one_challenge(unsigned short challenge, unsigned short nthread){
-    //[IMPLEMENT][TEST] a loop that creates all the necessary threads and loads inputs[] with their values
     pthread_t th[nthread];  //creates a thread th(index)
     tinput_t inputs[nthread];   //creates a stuct with the id of a thread, tid, and the number of the challenge, challenge.
 
-
-    found_solutions = 0;    //[IMPLEMENT][TEST][BUG][shared variable] needs a lock. our thread flag variable
-    solutions = (unsigned long*) malloc(NSOLUTIONS * (sizeof(unsigned long)));  //[IMPLEMENT][TEST][BUG][shared variable] needs a lock to store solution answers
+    found_solutions = 0;    // //[BUG][shared variable] needs a lock. our thread flag variable
+    solutions = (unsigned long*) malloc(NSOLUTIONS * (sizeof(unsigned long)));  //[BUG][shared variable] needs a lock to store solution answers
     for(int i=0; i<NSOLUTIONS; i++){    // initializes solutions to 0
-        solutions[i] = 0;   //[IMPLEMENT][TEST][BUG][shared variable] needs a lock
+        solutions[i] = 0;   //[BUG][shared variable] needs a lock
     }
 
+    // Needs to set different challenges to different threads
     for(int i=0; i<nthread; i++){   // sets the tid and challenge for each thread and then creates the threads to work on them
         inputs[i].tid = i;
-        inputs[i].challenge = challenge;    // the challenges are all going to be the same since its the same problem
+        inputs[i].challenge = challenge;
         pthread_create(&(th[i]), NULL, worker_thread_function, &(inputs[i]));
     }
 
@@ -119,9 +117,9 @@ void solve_one_challenge(unsigned short challenge, unsigned short nthread){
 int main(int argc, char* argv[]) {
     //argv[1] is the number of worker threads we must use
     //the other arguments are the challenges we must solve
-    unsigned short nthread = strtol(argv[1],NULL,10);   //[POTENTIAL BUG] Does this create all the threads given by the command line?
+    unsigned short nthread = strtol(argv[1],NULL,10);
 
-    for(int i = 2; i<argc; i++){    // starting at the first challange thread until the last challenge thread   [BUG] Does this create all the threads given by the command line?
+    for(int i = 2; i<argc; i++){    // starting at the first challange thread until the last challenge thread
         unsigned short challenge = strtol(argv[i],NULL,10); //Gets one challenge
         solve_one_challenge(challenge, nthread);    // solves one challenge with the index of the first thread
     }
