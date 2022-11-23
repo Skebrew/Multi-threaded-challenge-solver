@@ -13,7 +13,7 @@ typedef struct{
 } tinput_t;
 
 
-unsigned int NSOLUTIONS = 8;    // max number of solutions
+unsigned int NSOLUTIONS = 8;    // max number of solutions, accessed by multiple threads but is never written to so it doesn't need a lock
 
 //the following two global variables are used by worker threads to communicate back the found results to the main thread
 unsigned short found_solutions = 0;
@@ -29,8 +29,6 @@ unsigned short divisibility_check(unsigned long n){
     }
     return 1;
 }
-  
-
 
 short try_solution(unsigned short challenge, unsigned long attempted_solution){
         //check if sha256(attempted_solution) is equal to digest
@@ -51,18 +49,18 @@ short try_solution(unsigned short challenge, unsigned long attempted_solution){
 
 
 void* worker_thread_function(void *tinput_void){
-    tinput_t* tinput = (tinput_t*) tinput_void;
+    tinput_t* tinput = (tinput_t*) tinput_void; // gets the tinput
 
-    unsigned long first_tried_solution = 0;
+    unsigned long first_tried_solution = 0; // starting solution trying from zero
     //1000*1000000000L*1000 is just very big number, which we will never reach
-    for(unsigned long attempted_solution=first_tried_solution; attempted_solution<1000*1000000000L*1000; attempted_solution++){
+    for(unsigned long attempted_solution=first_tried_solution; attempted_solution<1000*1000000000L*1000; attempted_solution++){ // incrementally tries to find a solution
         
         //condition1: sha256(attempted_solution) == challenge
         if(try_solution(tinput->challenge, attempted_solution)){
             //condition2: the last digit must be different in all the solutions
             short bad_solution = 0;
-            for(int i=0;i<found_solutions;i++){
-                if(attempted_solution%10 == solutions[i]%10){
+            for(int i=0;i<found_solutions;i++){ //[BUG][Shared Variable] needs lock
+                if(attempted_solution%10 == solutions[i]%10){   // [BUG][shared variable] needs a lock
                     bad_solution = 1;
                 }
             }
@@ -75,10 +73,10 @@ void* worker_thread_function(void *tinput_void){
                 continue;
             }
 
-            solutions[found_solutions] = attempted_solution;
-            found_solutions++;
+            solutions[found_solutions] = attempted_solution;    //[BUG][shared variable] needs a lock
+            found_solutions++;  //[BUG][shared variable] needs a lock
 
-            if(found_solutions==NSOLUTIONS){
+            if(found_solutions==NSOLUTIONS){    //[BUG][shared variable] needs a lock
                 return NULL;
             }
         }
@@ -90,10 +88,10 @@ void solve_one_challenge(unsigned short challenge, unsigned short nthread){
     pthread_t th[nthread];  //creates a thread th(index)
     tinput_t inputs[nthread];   //creates a stuct with the id of a thread, tid, and the number of the challenge, challenge.
 
-    found_solutions = 0;    // our thread flag variable
-    solutions = (unsigned long*) malloc(NSOLUTIONS * (sizeof(unsigned long)));  // to store solution answers
+    found_solutions = 0;    // //[BUG][shared variable] needs a lock. our thread flag variable
+    solutions = (unsigned long*) malloc(NSOLUTIONS * (sizeof(unsigned long)));  //[BUG][shared variable] needs a lock to store solution answers
     for(int i=0; i<NSOLUTIONS; i++){    // initializes solutions to 0
-        solutions[i] = 0;
+        solutions[i] = 0;   //[BUG][shared variable] needs a lock
     }
 
     // Needs to set different challenges to different threads
@@ -103,23 +101,23 @@ void solve_one_challenge(unsigned short challenge, unsigned short nthread){
         pthread_create(&(th[i]), NULL, worker_thread_function, &(inputs[i]));
     }
 
-    for(int i=0; i<nthread; i++){
+    for(int i=0; i<nthread; i++){   // Wait until all threads finish running
         pthread_join(th[i], NULL);
     }
 
-    printf("%d ", challenge);
+    printf("%d ", challenge);   // Print the solutions
     for(int i=0; i<NSOLUTIONS; i++){
-        printf("%ld ", solutions[i]);
+        printf("%ld ", solutions[i]);   //[shared variable] shouldn't need a lock since we already joined all the threads.
     }
     printf("\n");
-    free(solutions);
+    free(solutions);    //[shared variable] shouldn't need a lock since we already joined all the threads.
 }
 
 
 int main(int argc, char* argv[]) {
     //argv[1] is the number of worker threads we must use
     //the other arguments are the challenges we must solve
-    unsigned short nthread = strtol(argv[1],NULL,10);   //
+    unsigned short nthread = strtol(argv[1],NULL,10);
 
     for(int i = 2; i<argc; i++){    // starting at the first challange thread until the last challenge thread
         unsigned short challenge = strtol(argv[i],NULL,10); //Gets one challenge
