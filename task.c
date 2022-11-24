@@ -18,7 +18,7 @@ unsigned int NSOLUTIONS = 8;    // max number of solutions, accessed by multiple
 //the following two global variables are used by worker threads to communicate back the found results to the main thread
 unsigned short found_solutions = 0;
 unsigned long* solutions;
-//[IMPLEMENT][TEST] create a variable that will keep track of the  highest initial value used by a past thread
+//[IMPLEMENT][TEST] global flag to act as the flag for working with solutions or found_solutions // We made need to impliment a second lock after just in case
 
 unsigned short divisibility_check(unsigned long n){
     //very not efficient algorithm
@@ -52,7 +52,8 @@ short try_solution(unsigned short challenge, unsigned long attempted_solution){
 void* worker_thread_function(void *tinput_void){
     tinput_t* tinput = (tinput_t*) tinput_void; // gets the tinput
 
-    unsigned long first_tried_solution = 0; //[IMPLEMENT][TEST] first_tried_solution needs to be set to 10,000(or whatever interval) more than the last solution
+    unsigned long first_tried_solution = (tinput[0].tid) * 10000; //[IMPLEMENT][TEST] first_tried_solution needs to be set to 10,000(or whatever interval) more than the last solution
+
     //1000*1000000000L*1000 is just very big number, which we will never reach
     for(unsigned long attempted_solution=first_tried_solution; attempted_solution<1000*1000000000L*1000; attempted_solution++){ // incrementally tries to find a solution
         
@@ -84,17 +85,16 @@ void* worker_thread_function(void *tinput_void){
     }
 }
 
-// Create multiple threads to find the eight difefernet solution
+// Create multiple threads to find the eight different solution
 void solve_one_challenge(unsigned short challenge, unsigned short nthread){
-    //[IMPLEMENT][TEST] a loop that creates all the necessary threads and loads inputs[] with their values
-    pthread_t th[nthread];  //creates a thread th(index)
-    tinput_t inputs[nthread];   //creates a stuct with the id of a thread, tid, and the number of the challenge, challenge.
 
+    pthread_t th[nthread];      //creates an array to hold threads
+    tinput_t inputs[nthread];   //An array that holds the struct containing the threads id, tid, and the thread's challenge
 
     found_solutions = 0;    //[IMPLEMENT][TEST][BUG][shared variable] needs a lock. our thread flag variable
-    solutions = (unsigned long*) malloc(NSOLUTIONS * (sizeof(unsigned long)));  //[IMPLEMENT][TEST][BUG][shared variable] needs a lock to store solution answers
+    solutions = (unsigned long*) malloc(NSOLUTIONS * (sizeof(unsigned long)));  //[POTENTIAL BUG][shared variable] shouldn't need a lock yet since no threads have ran
     for(int i=0; i<NSOLUTIONS; i++){    // initializes solutions to 0
-        solutions[i] = 0;   //[IMPLEMENT][TEST][BUG][shared variable] needs a lock
+        solutions[i] = 0;   //[POTENTIAL BUG][shared variable] shouldn't need a lock yet since no threads have ran
     }
 
     for(int i=0; i<nthread; i++){   // sets the tid and challenge for each thread and then creates the threads to work on them
