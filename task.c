@@ -6,6 +6,8 @@
 #include <signal.h>
 #include <unistd.h>
 
+// ./task 2 23214 47215 14521 14282 8141 34109 48765 22535 37796 48456 49938 41142 42736 19305 60774 1809 51337 3488 9070 14283
+
 
 typedef struct{
     unsigned short tid;
@@ -55,29 +57,25 @@ short try_solution(unsigned short challenge, unsigned long attempted_solution){
 }
 
 void* worker_thread_function(void *tinput_void){
-    int useless_lock_reciever = 0; //[LOCK] this just is needed because the rwlock functions require a integer
+    char* lock_error_code = 0; //[LOCK] this just is needed because the rwlock functions require a integer
 
     tinput_t* tinput = (tinput_t*) tinput_void; // gets the tinput
     unsigned long first_tried_solution = (tinput[0].tid) * 10000; //[TEST] first_tried_solution needs to be set to 10,000(or whatever interval) more than the last solution
 
     //[LOCK] test if locks work
-    pthread_rwlock_wrlock(&variable_occupied);  //[LOCK] read lock [TESTCODE] write lock
+    lock_error_code = pthread_rwlock_wrlock(&variable_occupied);  //[LOCK] read lock [TESTCODE] write lock
 
     //1000*1000000000L*1000 is just very big number, which we will never reach
     for(unsigned long attempted_solution=first_tried_solution; attempted_solution<1000*1000000000L*1000; attempted_solution++){ // incrementally tries to find a solution
         //condition1: sha256(attempted_solution) == challenge
         if(found_solutions==NSOLUTIONS){    //[BUG][shared variable] needs a lock
-            //useless_lock_reciever = pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
-            pthread_rwlock_unlock(&variable_occupied);
+            lock_error_code = pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
             return NULL;
         }
         if(try_solution(tinput->challenge, attempted_solution)){
-            //useless_lock_reciever = pthread_rwlock_wrlock(&variable_occupied);  //[LOCK] read lock [TESTCODE] write lock
+            lock_error_code = pthread_rwlock_wrlock(&variable_occupied);  //[LOCK] read lock [TESTCODE] write lock
             //condition2: the last digit must be different in all the solutions
             short bad_solution = 0;
-            if (useless_lock_reciever != 0) {   //[TESTCODE]
-                printf("%i\n" + useless_lock_reciever);
-            }
             //locks++;    //[TESTCODE]
             //printf("Locked %i\n" + tinput[0].tid);
             for(int i=0;i<found_solutions;i++){ //[Shared Variable][TEST]
@@ -87,9 +85,9 @@ void* worker_thread_function(void *tinput_void){
             }
             //unlocks++;  //[TESTCODE]
             //printf("Unlocked %i\n" + tinput[0].tid);    //[TESTCODE]
-            //useless_lock_reciever = pthread_rwlock_unlock(&variable_occupied);  //[LOCK] Unlock read [TESTCODE] write unlock
-            if (useless_lock_reciever != 0) {   //[TESTCODE]
-                printf("%i\n" + useless_lock_reciever);
+            //lock_error_code = pthread_rwlock_unlock(&variable_occupied);  //[LOCK] Unlock read [TESTCODE] write unlock
+            if (lock_error_code != 0) {   //[TESTCODE]
+                lock_error_code = lock_error_code;
             }
 
             if(bad_solution){
@@ -101,25 +99,21 @@ void* worker_thread_function(void *tinput_void){
                 continue;
             }
 
-            useless_lock_reciever = pthread_rwlock_wrlock(&variable_occupied); //[LOCK] write lock
-            if (useless_lock_reciever != 0) {   //[TESTCODE]
-                printf("%i\n" + useless_lock_reciever);
+            //lock_error_code = pthread_rwlock_wrlock(&variable_occupied); //[LOCK] write lock
+            if (lock_error_code != 0) {   //[TESTCODE]
+                lock_error_code = lock_error_code;
             }
             solutions[found_solutions] = attempted_solution;    //[BUG][shared variable] needs a lock
             found_solutions++;  //[BUG][shared variable] needs a lock
             if(found_solutions==NSOLUTIONS){    //[BUG][shared variable] needs a lock
-                //useless_lock_reciever = pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
-                pthread_rwlock_unlock(&variable_occupied);
-                return NULL;
-            }
-            //useless_lock_reciever= pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
-            if (useless_lock_reciever != 0) {   //[TESTCODE]
-                printf("%i\n" + useless_lock_reciever);
+                //lock_error_code = pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
+                lock_error_code = pthread_rwlock_unlock(&variable_occupied);
+                return lock_error_code;
             }
         }
-        //pthread_rwlock_unlock(&variable_occupied);
     }
-    pthread_rwlock_unlock(&variable_occupied);
+    lock_error_code = pthread_rwlock_unlock(&variable_occupied);
+    return lock_error_code;
 }
 
 // Create multiple threads to find the eight different solution
@@ -127,6 +121,7 @@ void solve_one_challenge(unsigned short challenge, unsigned short nthread){
 
     pthread_t th[nthread];      //creates an array to hold threads
     tinput_t inputs[nthread];   //An array that holds the struct containing the threads id, tid, and the thread's challenge
+    int lock_error_code;    //[TESTCODE] collects the locks error number
 
     found_solutions = 0;    //[IMPLEMENT][TEST][BUG][shared variable] needs a lock. our thread flag variable
     solutions = (unsigned long*) malloc(NSOLUTIONS * (sizeof(unsigned long)));  //[POTENTIAL BUG][shared variable] shouldn't need a lock yet since no threads have ran
@@ -137,7 +132,7 @@ void solve_one_challenge(unsigned short challenge, unsigned short nthread){
     for(int i=0; i<nthread; i++){   // sets the tid and challenge for each thread and then creates the threads to work on them
         inputs[i].tid = i;
         inputs[i].challenge = challenge;    // the challenges are all going to be the same since its the same problem
-        pthread_create(&(th[i]), NULL, worker_thread_function, &(inputs[i]));
+        lock_error_code = pthread_create(&(th[i]), NULL, worker_thread_function, &(inputs[i]));
     }
 
     for(int i=0; i<nthread; i++){   // Wait until all threads finish running
