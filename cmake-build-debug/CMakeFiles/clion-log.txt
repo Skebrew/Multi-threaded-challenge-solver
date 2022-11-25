@@ -1,16 +1,16 @@
-/home/s2/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/s2/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/ninja/linux/ninja -DCMAKE_C_COMPILER=/usr/bin/gcc set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb)" -G Ninja -S /home/s2/Documents/HW4 -B /home/s2/Documents/HW4/cmake-build-debug
-CMake Warning:
-  Ignoring extra path from command line:
-
-   "/home/s2/Documents/HW4/cmake-build-debug/set(CMAKE_C_FLAGS_DEBUG"
-
-
-CMake Warning:
-  Ignoring extra path from command line:
-
-   "${CMAKE_C_FLAGS_DEBUG} -ggdb)"
-
-
+/home/s2/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/usr/bin/gcc -G "CodeBlocks - Unix Makefiles" -S /home/s2/Documents/hw4github -B /home/s2/Documents/hw4github/cmake-build-debug
+-- The C compiler identification is GNU 11.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.a (found version "3.0.2")  
 -- Configuring done
 -- Generating done
--- Build files have been written to: /home/s2/Documents/HW4/cmake-build-debug
+-- Build files have been written to: /home/s2/Documents/hw4github/cmake-build-debug
