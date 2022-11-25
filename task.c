@@ -22,6 +22,10 @@ unsigned long* solutions;
 //[IMPLEMENT][TEST][LOCK] we're going to try to get a read/write lock working here
 pthread_rwlock_t variable_occupied;
 
+//[TESTCODE] variables for tracking locks
+int locks = 0;
+int unlocks = 0;
+
 unsigned short divisibility_check(unsigned long n){
     //very not efficient algorithm
     unsigned long i;
@@ -51,25 +55,43 @@ short try_solution(unsigned short challenge, unsigned long attempted_solution){
 }
 
 void* worker_thread_function(void *tinput_void){
-    int* useless_lock_reciever; //[LOCK] this just is needed because the rwlock functions require a integer
-    tinput_t* tinput = (tinput_t*) tinput_void; // gets the tinput
+    int useless_lock_reciever = 0; //[LOCK] this just is needed because the rwlock functions require a integer
 
+    tinput_t* tinput = (tinput_t*) tinput_void; // gets the tinput
     unsigned long first_tried_solution = (tinput[0].tid) * 10000; //[TEST] first_tried_solution needs to be set to 10,000(or whatever interval) more than the last solution
+
+    //[LOCK] test if locks work
+    pthread_rwlock_wrlock(&variable_occupied);  //[LOCK] read lock [TESTCODE] write lock
 
     //1000*1000000000L*1000 is just very big number, which we will never reach
     for(unsigned long attempted_solution=first_tried_solution; attempted_solution<1000*1000000000L*1000; attempted_solution++){ // incrementally tries to find a solution
-        
         //condition1: sha256(attempted_solution) == challenge
+        if(found_solutions==NSOLUTIONS){    //[BUG][shared variable] needs a lock
+            //useless_lock_reciever = pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
+            pthread_rwlock_unlock(&variable_occupied);
+            return NULL;
+        }
         if(try_solution(tinput->challenge, attempted_solution)){
+            //useless_lock_reciever = pthread_rwlock_wrlock(&variable_occupied);  //[LOCK] read lock [TESTCODE] write lock
             //condition2: the last digit must be different in all the solutions
             short bad_solution = 0;
-            pthread_rwlock_rdlock(&variable_occupied);  //[LOCK] read lock
+            if (useless_lock_reciever != 0) {   //[TESTCODE]
+                printf("%i\n" + useless_lock_reciever);
+            }
+            //locks++;    //[TESTCODE]
+            //printf("Locked %i\n" + tinput[0].tid);
             for(int i=0;i<found_solutions;i++){ //[Shared Variable][TEST]
                 if(attempted_solution%10 == solutions[i]%10){   // [shared variable] needs a lock
                     bad_solution = 1;
                 }
             }
-            pthread_rwlock_unlock(&variable_occupied);  //[LOCK] Unlock read
+            //unlocks++;  //[TESTCODE]
+            //printf("Unlocked %i\n" + tinput[0].tid);    //[TESTCODE]
+            //useless_lock_reciever = pthread_rwlock_unlock(&variable_occupied);  //[LOCK] Unlock read [TESTCODE] write unlock
+            if (useless_lock_reciever != 0) {   //[TESTCODE]
+                printf("%i\n" + useless_lock_reciever);
+            }
+
             if(bad_solution){
                 continue;
             }
@@ -79,19 +101,25 @@ void* worker_thread_function(void *tinput_void){
                 continue;
             }
 
-            pthread_rwlock_wrlock(&variable_occupied); //[LOCK] write lock
+            useless_lock_reciever = pthread_rwlock_wrlock(&variable_occupied); //[LOCK] write lock
+            if (useless_lock_reciever != 0) {   //[TESTCODE]
+                printf("%i\n" + useless_lock_reciever);
+            }
             solutions[found_solutions] = attempted_solution;    //[BUG][shared variable] needs a lock
             found_solutions++;  //[BUG][shared variable] needs a lock
-            pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
-
-            pthread_rwlock_wrlock(&variable_occupied); //[LOCK] write lock
             if(found_solutions==NSOLUTIONS){    //[BUG][shared variable] needs a lock
-                pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
+                //useless_lock_reciever = pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
+                pthread_rwlock_unlock(&variable_occupied);
                 return NULL;
             }
-            pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
+            //useless_lock_reciever= pthread_rwlock_unlock(&variable_occupied); //[LOCK] write unlock
+            if (useless_lock_reciever != 0) {   //[TESTCODE]
+                printf("%i\n" + useless_lock_reciever);
+            }
         }
+        //pthread_rwlock_unlock(&variable_occupied);
     }
+    pthread_rwlock_unlock(&variable_occupied);
 }
 
 // Create multiple threads to find the eight different solution
