@@ -6,7 +6,8 @@
 #include <signal.h>
 #include <unistd.h>
 
-// ./task 2 23214 47215 14521 14282 8141 34109 48765 22535 37796 48456 49938 41142 42736 19305 60774 1809 51337 3488 9070 14283
+// NEED TO IMPLEMENT: I need the next thread's initial attempt to be where the next biggest value is. not just +10000
+// Or I need to just put finer lock control. Damn I want to do that but I should spend some time with my family lol. It's thanksgiving after all
 
 
 typedef struct{
